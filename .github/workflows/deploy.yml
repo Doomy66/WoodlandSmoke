@@ -1,0 +1,59 @@
+# Builds the game and publishes dist/ to GitHub Pages.
+#
+# dist/ is gitignored and stays that way: the build output is produced here on
+# every push to main rather than committed. Actions minutes are free on a public
+# repository, so this costs nothing to run.
+#
+# vite.config.ts sets a relative base, so the site works from the project
+# subdirectory Pages serves it on without any path configuration here.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time. A push that lands mid-run waits rather than racing,
+# and is not cancelled, so what reaches Pages is always the newest main.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The tests are the gate. A broken build should not reach the published
+      # site, and `npm run build` type checks before Vite runs.
+      - run: npm test
+      - run: npm run build
+
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
