@@ -1,5 +1,6 @@
 import { Game } from "./game";
 import { photosReady, preloadPhotos } from "./world/photo";
+import { loadSkins } from "./characters/skins";
 import "./hud/style.css";
 
 declare const __APP_VERSION__: string;
@@ -26,8 +27,9 @@ const TIPS = [
 byId("tip").textContent = TIPS[Math.floor(Math.random() * TIPS.length)]!;
 
 // Let the loading text paint before the wood is grown.
-setTimeout(() => {
+setTimeout(async () => {
   preloadPhotos();
+  await loadSkins();
   try {
     const game = new Game(byId("game"), { title, pause: byId("pause"), pauseScore: byId("pause-score") });
     game.start();

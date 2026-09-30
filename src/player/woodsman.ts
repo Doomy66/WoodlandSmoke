@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { clamp, damp } from "../core/math";
 import { mergeStatic } from "../core/merge";
+import { extra, hasSkin, Skin } from "../characters/skins";
 import { lathe, limb, path } from "../core/shapes";
 import { cloth } from "../world/textures";
 
@@ -108,6 +109,7 @@ export class Woodsman {
   private readonly nockedArrow: THREE.Group;
   private readonly ponytailAnchor = new THREE.Object3D();
   private readonly ponytail: Ponytail;
+  private skin: Skin | null = null;
   private phase = 0;
   private time = 0;
   private current: WoodsmanPose = { speed: 0, crouch: 0, raise: 0, draw: 0, pitch: 0, nocked: true };
@@ -149,13 +151,13 @@ export class Woodsman {
     belt.scale.z = 0.68;
     this.torso.add(belt);
     const buckle = mesh(new THREE.BoxGeometry(0.04, 0.035, 0.01), new THREE.MeshStandardMaterial({ color: 0x8a7a5a, metalness: 0.7, roughness: 0.4 }), 0, 0.05, -0.115);
-    this.torso.add(buckle);
+    this.torso.add(extra(buckle));
     const pouch = mesh(new THREE.SphereGeometry(1, 10, 8), LEATHER(), -0.15, -0.02, -0.03);
     pouch.scale.set(0.035, 0.06, 0.055);
-    this.torso.add(pouch);
+    this.torso.add(extra(pouch));
     const knife = mesh(new THREE.CylinderGeometry(0.014, 0.01, 0.2, 6), LEATHER(), 0.16, -0.04, 0.02);
     knife.rotation.z = 0.2;
-    this.torso.add(knife);
+    this.torso.add(extra(knife));
 
     // Quiver slung across the back, arrows showing.
     const quiver = new THREE.Group();
@@ -172,7 +174,7 @@ export class Woodsman {
       f.rotation.y = i;
       quiver.add(f);
     }
-    this.torso.add(quiver);
+    this.torso.add(extra(quiver));
 
     // Head and neck.
     this.head.position.y = 0.64;
@@ -203,7 +205,7 @@ export class Woodsman {
     hairline.scale.set(0.89, 1.1, 1.01);
     this.head.add(hairline);
     const tie = mesh(new THREE.TorusGeometry(0.022, 0.008, 6, 12), LEATHER(), 0, 0.14, 0.1);
-    this.head.add(tie);
+    this.head.add(extra(tie));
     this.ponytailAnchor.position.set(0, 0.14, 0.11);
     this.head.add(this.ponytailAnchor);
     // An old scar across the left cheek.
@@ -217,7 +219,7 @@ export class Woodsman {
 
     // Arms: wool sleeves, a leather bracer on the bow arm, gloved hands.
     for (const [shoulder, elbow, side] of [[this.shoulderL, this.elbowL, -1], [this.shoulderR, this.elbowR, 1]] as const) {
-      shoulder.position.set(side * 0.2, 0.52, 0);
+      shoulder.position.set(side * 0.235, 0.52, 0);
       shoulder.add(mesh(new THREE.SphereGeometry(0.062, 14, 10), TUNIC()));
       shoulder.add(capsule(0.054, 0.2, TUNIC(), -0.13));
       elbow.position.y = -0.28;
@@ -247,6 +249,15 @@ export class Woodsman {
     this.bow.position.y = -0.27;
     this.elbowL.add(this.bow);
 
+    extra(this.bow);
+    // The Blender-built body, when it has loaded, replaces the shapes above.
+    if (hasSkin("hunter")) {
+      this.skin = new Skin("hunter", this.root, {
+        hips: this.hips, torso: this.torso, head: this.head,
+        legL: this.legL, kneeL: this.kneeL, legR: this.legR, kneeR: this.kneeR,
+        shoulderL: this.shoulderL, elbowL: this.elbowL, shoulderR: this.shoulderR, elbowR: this.elbowR,
+      }, 0.85, "wool");
+    }
     mergeStatic(this.root);
     this.ponytail = new Ponytail(HAIR());
     this.root.add(this.ponytail.group);
@@ -324,6 +335,7 @@ export class Woodsman {
     this.nockedArrow.position.set(0.02, 0, pull);
 
     this.root.updateMatrixWorld(true);
+    this.skin?.sync();
     this.ponytail.update(dt, this.ponytailAnchor, this.head, this.root);
   }
 

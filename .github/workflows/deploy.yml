@@ -9,9 +9,8 @@
 
 name: Deploy to GitHub Pages
 
+# Publishing is paused: run it by hand from the Actions tab when wanted.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

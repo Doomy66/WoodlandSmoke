@@ -4,10 +4,11 @@ A third-person hunting game in the browser. You are a woodsman with a longbow
 and a quiver of twelve arrows, in a misty wood full of red deer, wild boar and
 rabbits that can see you, hear you and smell you.
 
-The hunter, the animals, the trees and every sound are made in code. The
-ground, oak and spruce bark and rock surfaces are photographed textures from
-[Poly Haven](https://polyhaven.com), released CC0 into the public domain, in
-`public/textures`.
+The trees and every sound are made in code. The hunter and the animals are
+built in Blender by a script (see below) and loaded as skinned models from
+`public/models`. The ground, oak and spruce bark and rock surfaces are
+photographed textures from [Poly Haven](https://polyhaven.com), released CC0
+into the public domain, in `public/textures`.
 
 ## Play
 
@@ -80,6 +81,22 @@ ignore it.
 
 Add `?seed=` and a number to the address to grow a different wood.
 
+## The models
+
+`tools/blender/build_characters.py` builds the hunter, stag, hind, boar and
+rabbit. Each body is grown from a skin skeleton (points with radii, joined by
+edges) using Blender's Skin and Subdivision modifiers, rigged with bones at
+the game's own joint positions, weighted, painted and exported as `.glb`. The
+game keeps animating its joints in code; each model's bones follow them. To
+rebuild after changing the script (Blender 5.2):
+
+```bash
+blender -b --factory-startup --python tools/blender/build_characters.py -- public/models
+```
+
+Add `--preview DIR` to render side, front and three-quarter views of each,
+posed and at rest, or name characters (`hunter stag`) to build only those.
+
 ## Development
 
 ```bash
@@ -87,5 +104,6 @@ npm test
 npm run build
 ```
 
-Built with [Three.js](https://threejs.org), Vite and TypeScript. Pushes to
-`main` build and publish to GitHub Pages through `.github/workflows/deploy.yml`.
+Built with [Three.js](https://threejs.org), Vite and TypeScript.
+`.github/workflows/deploy.yml` can publish to GitHub Pages, but only when run
+by hand; publishing on push is switched off.

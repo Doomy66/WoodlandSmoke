@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { NoiseKind } from "../sound/noise";
 import { lathe, limb, paint, path } from "../core/shapes";
 import { fur } from "../world/textures";
+import { extra, type SkinName } from "../characters/skins";
 
 export type SpeciesId = "stag" | "hind" | "boar" | "rabbit";
 export type Zone = "head" | "vital" | "body";
@@ -56,6 +57,8 @@ export interface Species {
   hops: boolean;
   eyeHeight: number;
   hitboxes: Hitbox[];
+  /** The Blender-built body it wears, when that has loaded. */
+  skin: SkinName;
   build(): AnimalModel;
 }
 
@@ -185,16 +188,16 @@ function deer(o: DeerOpts): AnimalModel {
   }), coat()));
 
   const head = new THREE.Group();
-  head.position.set(0, 0.58, -0.28);
+  head.position.set(0, 0.5, -0.26);
   neck.add(head);
   head.add(part(tinted(new THREE.SphereGeometry(1, 18, 14).scale(0.075, 0.085, 0.12), base), coat(), 0, 0, -0.04));
   head.add(part(tinted(new THREE.SphereGeometry(1, 16, 12).scale(0.05, 0.058, 0.1), base.clone().lerp(belly, 0.2)), coat(), 0, -0.035, -0.16));
   head.add(ellipsoid(0.034, 0.028, 0.022, plain(0x151110, 0.3), 0, -0.035, -0.255, 10));
   for (const s of [-1, 1]) {
-    head.add(ellipsoid(0.013, 0.013, 0.01, plain(0x0c0a08, 0.15), s * 0.062, 0.02, -0.07, 10));
+    head.add(extra(ellipsoid(0.013, 0.013, 0.01, plain(0x0c0a08, 0.15), s * 0.062, 0.02, -0.07, 10)));
     const ear = part(tinted(new THREE.SphereGeometry(1, 12, 8).scale(0.035, 0.085, 0.014), base), coat(), s * 0.07, 0.085, 0.02);
     ear.rotation.set(-0.25, s * 0.5, s * -0.7);
-    head.add(ear);
+    head.add(extra(ear));
   }
   if (o.antlers) {
     const bone = plain(0x9d8a6c, 0.75);
@@ -217,7 +220,7 @@ function deer(o: DeerOpts): AnimalModel {
         const mid = a.clone().lerp(b, 0.5).add(new THREE.Vector3(0, len * 0.15, 0));
         g.add(part(limb(new THREE.CatmullRomCurve3([a, mid, b]), (u) => 0.014 - u * 0.009, 5, 5, 1, true), bone));
       }
-      head.add(g);
+      head.add(extra(g));
     }
   }
 
@@ -276,14 +279,14 @@ function boar(): AnimalModel {
   const skull = part(tinted(new THREE.ConeGeometry(0.19, 0.5, 14, 1).rotateX(-Math.PI / 2), base), coat(0.95), 0, 0, -0.2);
   skull.scale.set(0.85, 1, 1);
   head.add(skull);
-  head.add(part(new THREE.CylinderGeometry(0.052, 0.056, 0.03, 14).rotateX(Math.PI / 2), plain(0x4a3a36, 0.5), 0, -0.02, -0.45));
+  head.add(extra(part(new THREE.CylinderGeometry(0.052, 0.056, 0.03, 14).rotateX(Math.PI / 2), plain(0x4a3a36, 0.5), 0, -0.02, -0.45)));
   for (const s of [-1, 1]) {
-    head.add(ellipsoid(0.011, 0.011, 0.009, plain(0x0c0a08, 0.2), s * 0.075, 0.06, -0.14, 8));
+    head.add(extra(ellipsoid(0.011, 0.011, 0.009, plain(0x0c0a08, 0.2), s * 0.075, 0.06, -0.14, 8)));
     const ear = part(tinted(new THREE.ConeGeometry(0.045, 0.1, 6).scale(1, 1, 0.4), base), coat(), s * 0.08, 0.14, -0.02);
     ear.rotation.set(-0.3, 0, s * -0.4);
-    head.add(ear);
+    head.add(extra(ear));
     const tusk = part(limb(path([[0, 0, 0], [s * 0.015, 0.03, -0.02], [s * 0.02, 0.07, -0.01]]), (t) => 0.011 - t * 0.008, 5, 4, 1, true), plain(0xe6dcc6, 0.4), s * 0.05, -0.05, -0.38);
-    head.add(tusk);
+    head.add(extra(tusk));
   }
 
   const reach = bodyY - 0.08;
@@ -328,10 +331,10 @@ function rabbit(): AnimalModel {
   head.add(part(tinted(new THREE.SphereGeometry(1, 16, 12).scale(0.045, 0.05, 0.065), base), coat(), 0, 0, -0.02));
   head.add(ellipsoid(0.01, 0.008, 0.006, plain(0x3a2a26, 0.4), 0, -0.01, -0.083, 8));
   for (const s of [-1, 1]) {
-    head.add(ellipsoid(0.009, 0.009, 0.007, plain(0x0a0806, 0.1), s * 0.035, 0.015, -0.035, 8));
+    head.add(extra(ellipsoid(0.009, 0.009, 0.007, plain(0x0a0806, 0.1), s * 0.035, 0.015, -0.035, 8)));
     const ear = part(tinted(new THREE.CapsuleGeometry(0.016, 0.07, 4, 8).scale(1, 1, 0.45), base), coat(), s * 0.02, 0.07, 0.015);
     ear.rotation.set(0.45, 0, s * -0.15);
-    head.add(ear);
+    head.add(extra(ear));
   }
 
   const legs: THREE.Group[] = [];
@@ -366,6 +369,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
       { zone: "body", on: "root", x: 0, y: 1.04, z: -0.12, r: 0.3 },
       { zone: "body", on: "root", x: 0, y: 1.04, z: 0.38, r: 0.3 },
     ],
+    skin: "stag",
     build: () => deer({ scale: 1, coat: 0x62391f, neckThick: 1.25, antlers: true }),
   },
   hind: {
@@ -379,6 +383,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
       { zone: "body", on: "root", x: 0, y: 0.94, z: -0.1, r: 0.27 },
       { zone: "body", on: "root", x: 0, y: 0.94, z: 0.34, r: 0.27 },
     ],
+    skin: "hind",
     build: () => deer({ scale: 0.9, coat: 0x70442a, neckThick: 0.95, antlers: false }),
   },
   boar: {
@@ -391,6 +396,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
       { zone: "body", on: "root", x: 0, y: 0.58, z: -0.05, r: 0.3 },
       { zone: "body", on: "root", x: 0, y: 0.58, z: 0.35, r: 0.3 },
     ],
+    skin: "boar",
     build: boar,
   },
   rabbit: {
@@ -401,6 +407,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
       { zone: "head", on: "head", x: 0, y: 0, z: -0.03, r: 0.055 },
       { zone: "vital", on: "root", x: 0, y: 0.15, z: 0, r: 0.13 },
     ],
+    skin: "rabbit",
     build: rabbit,
   },
 };

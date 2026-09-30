@@ -5,6 +5,7 @@ import { lineBlocked, pushOut } from "../world/collide";
 import type { Context } from "../world/context";
 import { PLAY_HALF } from "../world/terrain";
 import { mergeStatic } from "../core/merge";
+import { hasSkin, Skin } from "../characters/skins";
 import { scentStrength, sightStrength } from "./senses";
 import type { AnimalModel, Species, Zone } from "./species";
 
@@ -29,6 +30,7 @@ const tmp2 = new THREE.Vector3();
  */
 export class Animal {
   readonly model: AnimalModel;
+  private skin: Skin | null = null;
   readonly position = new THREE.Vector3();
   yaw: number;
   state: AnimalState = "graze";
@@ -60,6 +62,13 @@ export class Animal {
 
   constructor(readonly species: Species, x: number, z: number, readonly anchor: Anchor, ctx: Context) {
     this.model = species.build();
+    const m = this.model;
+    if (hasSkin(species.skin)) {
+      const joints: Record<string, THREE.Object3D> = { body: m.body, neck: m.neck, head: m.head, tail: m.tail };
+      m.legs.forEach((l, i) => { joints[`leg${i}`] = l; });
+      m.lowers.forEach((l, i) => { joints[`lower${i}`] = l; });
+      this.skin = new Skin(species.skin, m.root, joints, 0.9);
+    }
     mergeStatic(this.model.root);
     this.position.set(x, ctx.terrain.heightAt(x, z), z);
     this.yaw = Math.random() * Math.PI * 2;
@@ -471,6 +480,7 @@ export class Animal {
     m.tail.rotation.x = (this.state === "flee" || this.awareness > 0.5 ? -0.8 : 0.3) + Math.sin(ctx.time * 7 + this.phase) * 0.08;
 
     m.root.updateMatrixWorld(true);
+    this.skin?.sync();
   }
 
   private animateDead(dt: number): void {
@@ -484,6 +494,7 @@ export class Animal {
     for (const leg of m.legs) leg.rotation.x = damp(leg.rotation.x, 0.15, 3, dt);
     for (const lower of m.lowers) lower.rotation.x = damp(lower.rotation.x, 0, 3, dt);
     m.root.updateMatrixWorld(true);
+    this.skin?.sync();
   }
 
   private hitboxCentre(on: "root" | "head", x: number, y: number, z: number, out: THREE.Vector3): THREE.Vector3 {

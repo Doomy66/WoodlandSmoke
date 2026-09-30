@@ -161,9 +161,11 @@ export class Forest {
   }
 
   private leafMaterial(map: THREE.Texture, stiffness: number, heightScale: number): { material: THREE.Material; depth: THREE.MeshDepthMaterial } {
-    // No specular: leaves seen edge-on would otherwise mirror the bright sky and go white.
-    const material = new THREE.MeshPhysicalMaterial({
-      map, alphaTest: ALPHA_TEST, side: THREE.DoubleSide, roughness: 0.9, metalness: 0, specularIntensity: 0,
+    // Lambert: no specular to mirror the sky off edge-on leaves, and far cheaper
+    // to shade across thousands of overlapping cards. A little emissive stands
+    // in for the sky light that only the physically based materials receive.
+    const material = new THREE.MeshLambertMaterial({
+      map, alphaTest: ALPHA_TEST, side: THREE.DoubleSide, emissive: 0x1b2412, emissiveMap: map,
     });
     material.alphaToCoverage = true;
     addSway(material, stiffness, heightScale, true);
@@ -172,7 +174,7 @@ export class Forest {
 }
 
 /** Full detail within this distance of the camera; the simpler version beyond. */
-const NEAR_TREES = 55;
+const NEAR_TREES = 38;
 
 interface TreeInstance { matrix: THREE.Matrix4; bark: THREE.Color; leaf: THREE.Color; centre: THREE.Vector3; radius: number }
 
